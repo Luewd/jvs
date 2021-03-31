@@ -1,5 +1,5 @@
-(def- [get_ put_ next_ reverse_ reverse!_]
-  [get put next reverse reverse!])
+(def- [get_ put_ next_ length_ reverse_ reverse!_]
+  [get put next length reverse reverse!])
 
 (defn init
   ```
@@ -173,7 +173,7 @@
         (set key (next-fn ds key)))
       i)
 
-    (length ds)))
+    (length_ ds)))
 
 (def- immutable-types
   @{:tuple true
