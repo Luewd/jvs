@@ -1,0 +1,58 @@
+= jvs
+
+Polymorphic variants of Janet's builtin `get`, `put`, `each`, and related utilities.
+They work as expected for builtin data types, but may be customized by defining :jvs/* methods on a table's prototype.
+
+== Installation
+
+[source,sh]
+----
+$ jpm install https://github.com/Luewd/jvs
+----
+
+== Usage
+
+At minimum a custom data type should implement the `:jvs/get`, `:jvs/put`, and `:jvs/next`, and `:jvs/length` methods.
+If one wishes for `put-in` to behave differently, it would be wise to implement the `:jvs/init` method as well.
+For more reliable cloning, data types should implement `:jvs/clone` in a manner appropriate for the data type.
+To allow reversing the entries in an ordered data structure, the structure should implement `:jvs/reverse` and `:jvs/reverse!`.
+
+The jvs interface may be implemented without depending on jvs itself, in case one wishes to be compatible with jvs without forcing the dependency on everyone.
+
+.Example implementation and usage of the jvs interface.
+[source,clojure]
+----
+(import jvs)
+
+# This is a simple prototype that implements the jvs interface by storing values
+# in the :data field instead of within the primary table itself.
+(def MyType
+  @{:jvs/get |(get-in $0 [:data $1] $2)
+    :jvs/put |(put-in $0 [:data $1] $2)
+    :jvs/next |(next (in $0 :data @{}) $1)
+    :jvs/length |(-?> (in $0 :data) length)})
+
+# Create an instance of a table with the above prototype.
+(def custom (table/setproto @{} MyType))
+
+# The custom tables store values within the :data field.
+(jvs/put custom :foo "bar")
+(jvs/put custom :bar "baz")
+
+# Create a normal table with no special properties.
+(def tbl @{})
+
+# When presented with a normal table, jvs/put falls back to the builtin put
+# function instead of using a custom implementation.
+(jvs/put tbl :foo "bar")
+
+# The iteration works as expected, using :jvs/next and :jvs/get for custom data
+# types, and the builtin next and get functions for builtin data types.
+(jvs/eachp kv tbl (pp kv))
+(jvs/eachp kv custom (pp kv))
+----
+
+== License
+
+`jvs` is made freely available under the terms of the link:LICENSE[BSD 0-Clause License].
+Third-party contributions shall be licensed under the same terms unless explicitly stated otherwise.
